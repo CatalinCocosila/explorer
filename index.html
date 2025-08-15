@@ -84,6 +84,15 @@
     const stripDiacritics = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const toSlug = (name) => stripDiacritics(name).trim().toLowerCase().replace(/[^a-z0-9\s_-]/g, '').replace(/[\s]+/g, '_').replace(/_+/g, '_');
 
+    function normalizeKeys(obj) {
+      const newObj = {};
+      for (let k in obj) {
+        const cleanKey = stripDiacritics(k).trim().toLowerCase();
+        newObj[cleanKey] = obj[k];
+      }
+      return newObj;
+    }
+
     function parseCSV(url) {
       return new Promise((resolve, reject) => {
         Papa.parse(url, { header: true, download: true, skipEmptyLines: true, complete: (results) => resolve(results.data), error: reject });
@@ -94,9 +103,10 @@
       for (const tab of ['OJI','ONI']) {
         try {
           const rows = await parseCSV(CSV_FILES[tab]);
-          const normalized = rows.map((r, idx) => {
-            const name = r.Problemă || r.Problema || r.name || `Problema ${idx+1}`;
-            const descriere = r.Descriere || r.descriere || r.Notiuni || r.notions || '';
+          const normalized = rows.map((raw, idx) => {
+            const r = normalizeKeys(raw);
+            const name = r['problema'] || r['problemă'] || r['name'] || `Problema ${idx+1}`;
+            const descriere = r['descriere'] || r['notiuni'] || r['noțiuni'] || '';
             const slug = toSlug(name);
             return { name, descriere, slug };
           });
