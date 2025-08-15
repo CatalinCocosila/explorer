@@ -4,42 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>OJI / ONI – Explorer</title>
-<<<<<<< HEAD
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/font/lucide.css">
-=======
-<<<<<<< HEAD
-  <!-- Tailwind (CDN) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/font/lucide.css">
-  <!-- Highlight.js (pentru .cpp) -->
-=======
-  <!-- În producție folosește un CSS precompilat. Vezi dist/styles.css (Tailwind build) -->
-  <link rel="stylesheet" href="dist/styles.css">
-  <!-- Highlight.js pentru .cpp -->
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
-  <!-- PapaParse (CSV parser robust) -->
-=======
-  <!-- PapaParse (CSV parser) -->
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-900">
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
   <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
       <span class="text-2xl font-bold tracking-tight">OJI / ONI – Explorer</span>
@@ -47,38 +21,6 @@
       <div class="ml-auto flex gap-2">
         <a href="#" id="downloadIndexBtn" class="text-sm underline">Descarcă index JSON</a>
       </div>
-<<<<<<< HEAD
-=======
-    </div>
-  </header>
-
-  <main class="max-w-7xl mx-auto px-4 pb-24">
-    <!-- Tabs OJI / ONI + search -->
-    <div class="mt-6 flex items-center gap-2">
-      <button id="tabOJI" class="px-4 py-2 rounded-full border border-black bg-black text-white font-medium">OJI</button>
-      <button id="tabONI" class="px-4 py-2 rounded-full border font-medium">ONI</button>
-      <div class="ml-auto flex items-center gap-2">
-        <input id="search" type="text" placeholder="Caută problemă / descriere…" class="w-72 px-3 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-black" />
-        <button id="clearFilters" class="px-3 py-2 rounded-xl border">Curăță</button>
-      </div>
-    </div>
-
-    <!-- Lista de probleme -->
-    <section class="mt-6">
-      <div class="overflow-hidden rounded-2xl border bg-white">
-        <table class="min-w-full">
-          <thead class="bg-gray-100 text-xs uppercase text-gray-600">
-            <tr>
-              <th class="text-left px-4 py-3 w-16">#</th>
-              <th class="text-left px-4 py-3">Problemă</th>
-              <th class="text-left px-4 py-3">Descriere</th>
-              <th class="text-right px-4 py-3 w-72">Acțiuni</th>
-=======
-  <header class="header">
-    <div class="container" style="padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem">
-      <span style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em">OJI / ONI – Explorer</span>
-      <span class="muted" style="font-size:.875rem">Enunțuri, soluții și noțiuni explicite</span>
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
     </div>
   </header>
 
@@ -98,79 +40,33 @@
         <table class="min-w-full">
           <thead class="bg-gray-100 text-xs uppercase text-gray-600">
             <tr>
-<<<<<<< HEAD
               <th class="text-left px-4 py-3 w-16">#</th>
               <th class="text-left px-4 py-3">Problemă</th>
               <th class="text-left px-4 py-3">Descriere</th>
               <th class="text-right px-4 py-3 w-72">Acțiuni</th>
-=======
-              <th class="text-left w-16">#</th>
-              <th class="text-left">Problemă</th>
-              <th class="text-left">Noțiuni</th>
-              <th class="text-right w-72">Acțiuni</th>
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
             </tr>
           </thead>
           <tbody id="problemsTbody" class="divide-y"></tbody>
         </table>
       </div>
-<<<<<<< HEAD
       <div id="emptyState" class="hidden mt-8 text-center text-gray-500">Niciun rezultat pentru filtrele curente.</div>
-=======
-<<<<<<< HEAD
-      <div id="emptyState" class="hidden mt-8 text-center text-gray-500">Niciun rezultat pentru căutarea curentă.</div>
-=======
-      <div id="emptyState" style="display:none;margin-top:2rem;text-align:center" class="muted">Niciun rezultat pentru filtrele curente.</div>
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
     </section>
   </main>
 
   <!-- Modal viewer -->
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
   <div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4">
     <div class="w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-xl">
       <div class="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
         <div id="modalTitle" class="font-semibold"></div>
         <button id="modalClose" class="px-3 py-1 rounded-lg border">Închide</button>
-<<<<<<< HEAD
-=======
-=======
-  <div id="modal" class="modal">
-    <div class="modal-card">
-      <div class="modal-head">
-        <div id="modalTitle" style="font-weight:600"></div>
-        <button id="modalClose" class="btn">Închide</button>
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
       </div>
       <div id="modalBody" class="p-4 max-h-[70vh] overflow-auto"></div>
     </div>
   </div>
 
   <script>
-<<<<<<< HEAD
     const CSV_FILES = { OJI: 'probleme_OJI.csv', ONI: 'probleme_ONI.csv' };
     const ROOTS = { OJI: { enunturi: 'OJI/enunturi', rezolvari: 'OJI/rezolvari' }, ONI: { enunturi: 'ONI/enunturi', rezolvari: 'ONI/rezolvari' } };
-=======
-<<<<<<< HEAD
-    // CSV-urile sunt în rădăcină
-=======
-    // CSV-urile sunt la rădăcină și au headerul: Problema,Notiuni
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
-    const CSV_FILES = { OJI: 'probleme_OJI.csv', ONI: 'probleme_ONI.csv' };
-    // Convenție foldere
-    const ROOTS = {
-      OJI: { enunturi: 'OJI/enunturi', rezolvari: 'OJI/rezolvari' },
-      ONI: { enunturi: 'ONI/enunturi', rezolvari: 'ONI/rezolvari' }
-    };
-
-    // Elemente UI
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
     const tabOJI = document.getElementById('tabOJI');
     const tabONI = document.getElementById('tabONI');
     const searchInput = document.getElementById('search');
@@ -182,39 +78,11 @@
     const modalClose = document.getElementById('modalClose');
     const modalBody = document.getElementById('modalBody');
     const modalTitle = document.getElementById('modalTitle');
-<<<<<<< HEAD
     let activeTab = 'OJI';
     let dataByTab = { OJI: [], ONI: [] };
 
     const stripDiacritics = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const toSlug = (name) => stripDiacritics(name).trim().toLowerCase().replace(/[^a-z0-9\s_-]/g, '').replace(/[\s]+/g, '_').replace(/_+/g, '_');
-=======
-    const downloadIndexBtn = document.getElementById('downloadIndexBtn');
-
-    // State
-    let activeTab = 'OJI';
-    let dataByTab = { OJI: [], ONI: [] };
-
-<<<<<<< HEAD
-    // Helpers
-    function escapeHtml(s) {
-      return String(s ?? '')
-        .replaceAll('&','&amp;')
-        .replaceAll('<','&lt;')
-        .replaceAll('>','&gt;');
-=======
-    // Utils
-    function uniqueNotions(list) {
-      const out = new Set();
-      list.forEach(n => {
-        if (!n) return;
-        const parts = String(n).split(/[;,|]/).map(x => x.trim()).filter(Boolean);
-        parts.forEach(p => out.add(p));
-      });
-      return Array.from(out).sort((a,b)=>a.localeCompare(b));
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
-    }
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
 
     function parseCSV(url) {
       return new Promise((resolve, reject) => {
@@ -227,29 +95,16 @@
         try {
           const rows = await parseCSV(CSV_FILES[tab]);
           const normalized = rows.map((r, idx) => {
-<<<<<<< HEAD
             const name = r.Problemă || r.Problema || r.name || `Problema ${idx+1}`;
             const descriere = r.Descriere || r.descriere || r.Notiuni || r.notions || '';
             const slug = toSlug(name);
             return { name, descriere, slug };
-=======
-<<<<<<< HEAD
-            // CSV header: Problema,Notiuni (exact)
-            const name = r.Problema || r.name || r.Nume || r.Title || `Problema ${idx+1}`;
-            const notions = r.Notiuni || r.notions || r.notiuni || '';
-=======
-            const name = r.Problema || r.name || r.Nume || r.problema || r.Problem || r.Title || `Problema ${idx+1}`;
-            const notions = uniqueNotions([r.Notiuni, r.notions, r.notiuni, r.Tags, r.tags]).join('; ');
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
-            return { name, notions };
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
           });
           dataByTab[tab] = normalized;
         } catch {
           dataByTab[tab] = [];
         }
       }
-<<<<<<< HEAD
       renderTable();
     }
 
@@ -262,109 +117,31 @@
     function renderTable() {
       if (activeTab === 'OJI') { tabOJI.classList.add('bg-black','text-white'); tabONI.classList.remove('bg-black','text-white'); }
       else { tabONI.classList.add('bg-black','text-white'); tabOJI.classList.remove('bg-black','text-white'); }
-=======
-<<<<<<< HEAD
-=======
 
-      // Colectează noțiuni
-      allNotions = new Set();
-      Object.values(dataByTab).flat().forEach(item => {
-        String(item.notions || '')
-          .split(/[;,|]/)
-          .map(x => x.trim())
-          .filter(Boolean)
-          .forEach(n => allNotions.add(n));
-      });
-
-      renderNotions();
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
-      renderTable();
-    }
-
-    function matchesSearch(item) {
-      const q = searchInput.value.trim().toLowerCase();
-      if (!q) return true;
-      const txt = (item.name + ' ' + (item.notions || '')).toLowerCase();
-      return txt.includes(q);
-    }
-
-    function renderTable() {
-<<<<<<< HEAD
-      // Active tab UI
-      tabOJI.className = activeTab === 'OJI'
-        ? 'px-4 py-2 rounded-full border border-black bg-black text-white font-medium'
-        : 'px-4 py-2 rounded-full border font-medium';
-      tabONI.className = activeTab === 'ONI'
-        ? 'px-4 py-2 rounded-full border border-black bg-black text-white font-medium'
-        : 'px-4 py-2 rounded-full border font-medium';
-=======
-      // Tab UI
-      tabOJI.className = activeTab === 'OJI' ? 'btn primary' : 'btn';
-      tabONI.className = activeTab === 'ONI' ? 'btn primary' : 'btn';
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
-
-      const rows = dataByTab[activeTab].filter(matchesSearch);
+      const rows = dataByTab[activeTab].filter(matchesFilters);
       tbody.innerHTML = '';
 
       rows.forEach((item, i) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-<<<<<<< HEAD
           <td class="px-4 py-3 text-sm text-gray-500">${i+1}</td>
           <td class="px-4 py-3"><div class="font-medium">${item.name}</div></td>
           <td class="px-4 py-3"><p class="text-sm text-gray-700">${item.descriere}</p></td>
-=======
-<<<<<<< HEAD
-          <td class="px-4 py-3 text-sm text-gray-500">${i+1}</td>
-          <td class="px-4 py-3">
-            <div class="font-medium">${escapeHtml(item.name)}</div>
-            <div class="text-xs text-gray-500">${activeTab}</div>
-          </td>
-          <td class="px-4 py-3">
-            <p class="text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(item.notions)}</p>
-          </td>
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
           <td class="px-4 py-3 text-right">
             <button class="px-3 py-1.5 rounded-lg border mr-2" data-action="enunt">Enunț</button>
             <button class="px-3 py-1.5 rounded-lg border" data-action="rezolvare">Rezolvare</button>
           </td>
         `;
-<<<<<<< HEAD
-=======
-=======
-          <td class="muted">${i+1}</td>
-          <td><div style="font-weight:600">${item.name}</div><div class="muted" style="font-size:.75rem">${activeTab}</div></td>
-          <td>${String(item.notions||'').split(/[;,|]/).filter(Boolean).map(n=>`<span class="chip">${n}</span>`).join('')}</td>
-          <td style="text-align:right">
-            <button class="btn" data-action="enunt">Enunț</button>
-            <button class="btn" data-action="rezolvare">Rezolvare</button>
-          </td>`;
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
         tr.querySelector('[data-action="enunt"]').onclick = () => openEnunt(item);
         tr.querySelector('[data-action="rezolvare"]').onclick = () => openRezolvare(item);
         tbody.appendChild(tr);
       });
 
-<<<<<<< HEAD
       emptyState.classList.toggle('hidden', rows.length !== 0);
-=======
-      emptyState.style.display = rows.length ? 'none' : 'block';
-    }
-
-    // Construim căile direct din numele din CSV
-    function resolveEnuntPath(item) {
-      return `${ROOTS[activeTab].enunturi}/${item.name}_enunt.md`;
-    }
-    function resolveCppPath(item) {
-      return `${ROOTS[activeTab].rezolvari}/${item.name}_rezolvare.cpp`;
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
     }
 
     async function openEnunt(item) {
       modalTitle.textContent = `Enunț – ${item.name}`;
-<<<<<<< HEAD
       modalBody.innerHTML = '<div>Se încarcă…</div>';
       showModal();
       const path = `${ROOTS[activeTab].enunturi}/${item.slug}_enunt.md`;
@@ -373,61 +150,20 @@
         modalBody.innerHTML = marked.parse(txt);
       } catch {
         modalBody.innerHTML = `<div class="text-red-600">Enunțul nu a putut fi încărcat (${path}).</div>`;
-=======
-<<<<<<< HEAD
-      modalBody.innerHTML = '<div class="text-sm text-gray-500">Se încarcă…</div>';
-      showModal();
-      const path = resolveEnuntPath(item);
-=======
-      modalBody.innerHTML = 'Se încarcă…';
-      modal.classList.add('show');
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
-      try {
-        const txt = await (await fetch(path)).text();
-        modalBody.innerHTML = `<article class="prose max-w-none">${marked.parse(txt)}</article>`;
-      } catch (e) {
-<<<<<<< HEAD
-        modalBody.innerHTML = `<div class="text-red-600">Nu am putut încărca enunțul din <code>${escapeHtml(path)}</code>.</div>`;
-=======
-        modalBody.innerHTML = `Nu am putut încărca enunțul din <code>${resolveEnuntPath(item)}</code>.`;
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
       }
     }
 
     async function openRezolvare(item) {
       modalTitle.textContent = `Rezolvare – ${item.name}`;
-<<<<<<< HEAD
       modalBody.innerHTML = '<div>Se încarcă…</div>';
       showModal();
       const path = `${ROOTS[activeTab].rezolvari}/${item.slug}.cpp`;
-=======
-<<<<<<< HEAD
-      modalBody.innerHTML = '<div class="text-sm text-gray-500">Se încarcă…</div>';
-      showModal();
-      const path = resolveCppPath(item);
-      try {
-        const txt = await (await fetch(path)).text();
-        modalBody.innerHTML = `<pre><code class="language-cpp">${escapeHtml(txt)}</code></pre>`;
-        hljs.highlightAll();
-      } catch (e) {
-        modalBody.innerHTML = `<div class="text-red-600">Nu am putut încărca soluția din <code>${escapeHtml(path)}</code>.</div>`;
-=======
-      modalBody.innerHTML = 'Se încarcă…';
-      modal.classList.add('show');
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
       try {
         const txt = await (await fetch(path)).text();
         modalBody.innerHTML = `<pre><code class="language-cpp">${txt}</code></pre>`;
         hljs.highlightAll();
-<<<<<<< HEAD
       } catch {
         modalBody.innerHTML = `<div class="text-red-600">Rezolvarea nu a putut fi încărcată (${path}).</div>`;
-=======
-      } catch (e) {
-        modalBody.innerHTML = `Nu am putut încărca rezolvarea din <code>${resolveCppPath(item)}</code>.`;
->>>>>>> 5e0b6f25c027b424fd3283c54170bbea16493592
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
       }
     }
 
@@ -440,24 +176,10 @@
     modal.addEventListener('click', (e)=>{ if(e.target===modal) hideModal(); });
     searchInput.addEventListener('input', renderTable);
     clearBtn.onclick = () => { searchInput.value=''; renderTable(); };
-<<<<<<< HEAD
     downloadIndexBtn.onclick = () => {
       const blob = new Blob([JSON.stringify({ generatedAt: new Date().toISOString(), tabs: dataByTab }, null, 2)], {type:'application/json'});
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index_probleme.json'; a.click();
     };
-=======
-
-    downloadIndexBtn.onclick = () => {
-      const blob = new Blob([ JSON.stringify({ generatedAt: new Date().toISOString(), tabs: dataByTab }, null, 2) ], {type:'application/json'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'index_probleme.json';
-      a.click();
-      URL.revokeObjectURL(a.href);
-    };
-
-    // start
->>>>>>> 2d5e2afecb9fecafea1b67fc997f368891f31954
     loadData();
   </script>
 </body>
