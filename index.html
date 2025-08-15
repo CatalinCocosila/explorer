@@ -4,25 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>OJI / ONI – Explorer</title>
-  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Icons -->
+  <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/font/lucide.css">
-  <!-- Highlight.js (pentru .cpp) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
-  <!-- Marked (markdown -> HTML) -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <!-- PapaParse (CSV parser robust) -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  <style>
-    ::-webkit-scrollbar { width: 10px; height: 10px; }
-    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 9999px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    .chip { @apply inline-flex items-center px-2 py-0.5 rounded-full border text-xs mr-1 mb-1; }
-    .chip-active { @apply bg-black text-white border-black; }
-  </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
   <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b">
@@ -36,13 +25,12 @@
   </header>
 
   <main class="max-w-7xl mx-auto px-4 pb-24">
-    <!-- Tabs OJI / ONI + search -->
     <div class="mt-6 flex items-center gap-2">
       <button id="tabOJI" class="px-4 py-2 rounded-full border border-black bg-black text-white font-medium">OJI</button>
       <button id="tabONI" class="px-4 py-2 rounded-full border font-medium">ONI</button>
       <div class="ml-auto flex items-center gap-2">
         <input id="search" type="text" placeholder="Caută problemă / descriere…" class="w-72 px-3 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-black" />
-        <button id="clearFilters" class="px-3 py-2 rounded-xl border">Curăță</button>
+        <button id="clearFilters" class="px-3 py-2 rounded-xl border">Curăță filtre</button>
       </div>
     </div>
 
@@ -61,7 +49,7 @@
           <tbody id="problemsTbody" class="divide-y"></tbody>
         </table>
       </div>
-      <div id="emptyState" class="hidden mt-8 text-center text-gray-500">Niciun rezultat pentru căutarea curentă.</div>
+      <div id="emptyState" class="hidden mt-8 text-center text-gray-500">Niciun rezultat pentru filtrele curente.</div>
     </section>
   </main>
 
@@ -77,48 +65,28 @@
   </div>
 
   <script>
-    // CSV-urile sunt în rădăcină
     const CSV_FILES = { OJI: 'probleme_OJI.csv', ONI: 'probleme_ONI.csv' };
-    // Convenție foldere
-    const ROOTS = {
-      OJI: { enunturi: 'OJI/enunturi', rezolvari: 'OJI/rezolvari' },
-      ONI: { enunturi: 'ONI/enunturi', rezolvari: 'ONI/rezolvari' }
-    };
-
-    // Elemente UI
+    const ROOTS = { OJI: { enunturi: 'OJI/enunturi', rezolvari: 'OJI/rezolvari' }, ONI: { enunturi: 'ONI/enunturi', rezolvari: 'ONI/rezolvari' } };
     const tabOJI = document.getElementById('tabOJI');
     const tabONI = document.getElementById('tabONI');
     const searchInput = document.getElementById('search');
     const clearBtn = document.getElementById('clearFilters');
     const tbody = document.getElementById('problemsTbody');
     const emptyState = document.getElementById('emptyState');
+    const downloadIndexBtn = document.getElementById('downloadIndexBtn');
     const modal = document.getElementById('modal');
     const modalClose = document.getElementById('modalClose');
     const modalBody = document.getElementById('modalBody');
     const modalTitle = document.getElementById('modalTitle');
-    const downloadIndexBtn = document.getElementById('downloadIndexBtn');
-
-    // State
     let activeTab = 'OJI';
     let dataByTab = { OJI: [], ONI: [] };
 
-    // Helpers
-    function escapeHtml(s) {
-      return String(s ?? '')
-        .replaceAll('&','&amp;')
-        .replaceAll('<','&lt;')
-        .replaceAll('>','&gt;');
-    }
+    const stripDiacritics = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const toSlug = (name) => stripDiacritics(name).trim().toLowerCase().replace(/[^a-z0-9\s_-]/g, '').replace(/[\s]+/g, '_').replace(/_+/g, '_');
 
     function parseCSV(url) {
       return new Promise((resolve, reject) => {
-        Papa.parse(url, {
-          header: true,
-          download: true,
-          skipEmptyLines: true,
-          complete: (results) => resolve(results.data),
-          error: reject
-        });
+        Papa.parse(url, { header: true, download: true, skipEmptyLines: true, complete: (results) => resolve(results.data), error: reject });
       });
     }
 
@@ -127,50 +95,38 @@
         try {
           const rows = await parseCSV(CSV_FILES[tab]);
           const normalized = rows.map((r, idx) => {
-            // CSV header: Problema,Notiuni (exact)
-            const name = r.Problema || r.name || r.Nume || r.Title || `Problema ${idx+1}`;
-            const notions = r.Notiuni || r.notions || r.notiuni || '';
-            return { name, notions };
+            const name = r.Problemă || r.Problema || r.name || `Problema ${idx+1}`;
+            const descriere = r.Descriere || r.descriere || r.Notiuni || r.notions || '';
+            const slug = toSlug(name);
+            return { name, descriere, slug };
           });
           dataByTab[tab] = normalized;
-        } catch (e) {
-          console.error('Eroare la încărcarea CSV', tab, e);
+        } catch {
           dataByTab[tab] = [];
         }
       }
       renderTable();
     }
 
-    function matchesSearch(item) {
+    function matchesFilters(item) {
       const q = searchInput.value.trim().toLowerCase();
-      if (!q) return true;
-      const txt = (item.name + ' ' + (item.notions || '')).toLowerCase();
-      return txt.includes(q);
+      const txt = (item.name + ' ' + (item.descriere || '')).toLowerCase();
+      return !q || txt.includes(q);
     }
 
     function renderTable() {
-      // Active tab UI
-      tabOJI.className = activeTab === 'OJI'
-        ? 'px-4 py-2 rounded-full border border-black bg-black text-white font-medium'
-        : 'px-4 py-2 rounded-full border font-medium';
-      tabONI.className = activeTab === 'ONI'
-        ? 'px-4 py-2 rounded-full border border-black bg-black text-white font-medium'
-        : 'px-4 py-2 rounded-full border font-medium';
+      if (activeTab === 'OJI') { tabOJI.classList.add('bg-black','text-white'); tabONI.classList.remove('bg-black','text-white'); }
+      else { tabONI.classList.add('bg-black','text-white'); tabOJI.classList.remove('bg-black','text-white'); }
 
-      const rows = dataByTab[activeTab].filter(matchesSearch);
+      const rows = dataByTab[activeTab].filter(matchesFilters);
       tbody.innerHTML = '';
 
       rows.forEach((item, i) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="px-4 py-3 text-sm text-gray-500">${i+1}</td>
-          <td class="px-4 py-3">
-            <div class="font-medium">${escapeHtml(item.name)}</div>
-            <div class="text-xs text-gray-500">${activeTab}</div>
-          </td>
-          <td class="px-4 py-3">
-            <p class="text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(item.notions)}</p>
-          </td>
+          <td class="px-4 py-3"><div class="font-medium">${item.name}</div></td>
+          <td class="px-4 py-3"><p class="text-sm text-gray-700">${item.descriere}</p></td>
           <td class="px-4 py-3 text-right">
             <button class="px-3 py-1.5 rounded-lg border mr-2" data-action="enunt">Enunț</button>
             <button class="px-3 py-1.5 rounded-lg border" data-action="rezolvare">Rezolvare</button>
@@ -184,38 +140,30 @@
       emptyState.classList.toggle('hidden', rows.length !== 0);
     }
 
-    // Construim căile direct din numele din CSV
-    function resolveEnuntPath(item) {
-      return `${ROOTS[activeTab].enunturi}/${item.name}_enunt.md`;
-    }
-    function resolveCppPath(item) {
-      return `${ROOTS[activeTab].rezolvari}/${item.name}_rezolvare.cpp`;
-    }
-
     async function openEnunt(item) {
       modalTitle.textContent = `Enunț – ${item.name}`;
-      modalBody.innerHTML = '<div class="text-sm text-gray-500">Se încarcă…</div>';
+      modalBody.innerHTML = '<div>Se încarcă…</div>';
       showModal();
-      const path = resolveEnuntPath(item);
+      const path = `${ROOTS[activeTab].enunturi}/${item.slug}_enunt.md`;
       try {
         const txt = await (await fetch(path)).text();
-        modalBody.innerHTML = `<article class="prose max-w-none">${marked.parse(txt)}</article>`;
-      } catch (e) {
-        modalBody.innerHTML = `<div class="text-red-600">Nu am putut încărca enunțul din <code>${escapeHtml(path)}</code>.</div>`;
+        modalBody.innerHTML = marked.parse(txt);
+      } catch {
+        modalBody.innerHTML = `<div class="text-red-600">Enunțul nu a putut fi încărcat (${path}).</div>`;
       }
     }
 
     async function openRezolvare(item) {
       modalTitle.textContent = `Rezolvare – ${item.name}`;
-      modalBody.innerHTML = '<div class="text-sm text-gray-500">Se încarcă…</div>';
+      modalBody.innerHTML = '<div>Se încarcă…</div>';
       showModal();
-      const path = resolveCppPath(item);
+      const path = `${ROOTS[activeTab].rezolvari}/${item.slug}.cpp`;
       try {
         const txt = await (await fetch(path)).text();
-        modalBody.innerHTML = `<pre><code class="language-cpp">${escapeHtml(txt)}</code></pre>`;
+        modalBody.innerHTML = `<pre><code class="language-cpp">${txt}</code></pre>`;
         hljs.highlightAll();
-      } catch (e) {
-        modalBody.innerHTML = `<div class="text-red-600">Nu am putut încărca soluția din <code>${escapeHtml(path)}</code>.</div>`;
+      } catch {
+        modalBody.innerHTML = `<div class="text-red-600">Rezolvarea nu a putut fi încărcată (${path}).</div>`;
       }
     }
 
@@ -228,17 +176,10 @@
     modal.addEventListener('click', (e)=>{ if(e.target===modal) hideModal(); });
     searchInput.addEventListener('input', renderTable);
     clearBtn.onclick = () => { searchInput.value=''; renderTable(); };
-
     downloadIndexBtn.onclick = () => {
-      const blob = new Blob([ JSON.stringify({ generatedAt: new Date().toISOString(), tabs: dataByTab }, null, 2) ], {type:'application/json'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'index_probleme.json';
-      a.click();
-      URL.revokeObjectURL(a.href);
+      const blob = new Blob([JSON.stringify({ generatedAt: new Date().toISOString(), tabs: dataByTab }, null, 2)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'index_probleme.json'; a.click();
     };
-
-    // start
     loadData();
   </script>
 </body>
