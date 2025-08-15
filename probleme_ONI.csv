@@ -1,4 +1,4 @@
-﻿Nume_problema,Cunostinte_necesare
+﻿Problema,notiuni
 1133-stampile,Descompunerea numerelor în cifre zecimale; tablouri de frecvență pentru cifre; numărarea cifrelor distincte; selecția repetată a maximului pentru ordonare după frecvență; parcurgeri liniare și analiză de complexitate O(total_cifre).
 1134-turneu,Numărare pe frecvențe într-un tablou; determinarea parității aparițiilor (impar/pereche); găsirea valorii maxime și a indicilor corespunzători; numărarea elementelor cu frecvență zero; procesare liniară.
 547-balon,Actualizări pe submatrici cu tablou de diferențe 2D și prefix-sum 2D; tratarea marginilor (clamp pe borduri); aritmetică modulară și împărțire cu rest pentru praguri k; numărare pe niveluri (histograme); complexitate O(n·m + p).
@@ -12,7 +12,7 @@
 1219-numar,Parcurgerea secvențelor și gruparea după creștere; calculul restului modulo 9 cu tratarea specială a cazului rest 0; frecvența resturilor obținute; determinarea valorilor lipsă dintr-un set fix; condiții și ramificații pe cazuri.
 1220-prieteni,Generarea numerelor prime prin ciurul lui Eratostene; calculul sumei cifrelor și verificarea CMMDC; parcurgere pe multipli pentru marcarea numerelor; stocarea și afișarea condițională; vectori și optimizare prin marcare booleană.
 1195-spider,Simulare pe graf complet cu matrice de adiacență; deplasări ciclice controlate de paritate; stocarea muchiilor parcurse; sortare descrescătoare a muchiilor după cost; afișarea drumului și a ponderilor.
-1196-prime-apropiate_rezolvare,Generarea primelor până la limită mare cu ciurul lui Eratostene; căutare binară pentru găsirea celor mai apropiate două numere prime; tratarea cazurilor de egalitate cu criteriu suplimentar; optimizare O(log n) pentru interogări.
+1196-prime-apropiate,Generarea primelor până la limită mare cu ciurul lui Eratostene; căutare binară pentru găsirea celor mai apropiate două numere prime; tratarea cazurilor de egalitate cu criteriu suplimentar; optimizare O(log n) pentru interogări.
 1197-palindrom,Determinarea cifrei centrale pentru palindrom pe baza frecvențelor; construire jumătate stângă a palindromului și oglindirea ei; manipulare de tablouri și bucle pentru afișare; noțiuni de combinatorică pe multimi de cifre.
 1245-tzigla,Testarea divizibilității și condițiilor pe numere întregi; parcurgere în interval cu verificări pe factori comuni și diferențe; utilizarea funcției min pentru limitarea domeniului.
 1267-cifru,Prelucrare matriceală pe straturi concentrice; calculul sumelor pe cele patru laturi și alegerea maximului; stocarea direcției optime; rotații ale submatricilor în funcție de direcția aleasă; reconstrucția finală a matricei.
