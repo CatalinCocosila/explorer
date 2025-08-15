@@ -1,8 +1,22 @@
-/* Stiluri personalizate minime */
+/* Stiluri personalizate pentru OJI / ONI Explorer */
+
 body {
   font-family: system-ui, sans-serif;
 }
 
-table td p {
-  margin: 0;
+button {
+  transition: background-color 0.2s, color 0.2s;
+}
+
+button:hover {
+  background-color: #f3f4f6;
+}
+
+#modal {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
