@@ -4,12 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>OJI / ONI – Explorer</title>
+  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/font/lucide.css">
+  <!-- Highlight.js (pentru .cpp) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+  <!-- Marked (markdown -> HTML) -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- PapaParse (CSV parser robust) -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     ::-webkit-scrollbar { width: 10px; height: 10px; }
@@ -23,20 +28,25 @@
   <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
       <span class="text-2xl font-bold tracking-tight">OJI / ONI – Explorer</span>
-      <span class="text-sm text-gray-500">Enunțuri, soluții și noțiuni explicite</span>
+      <span class="text-sm text-gray-500">Enunțuri, soluții și descrieri</span>
+      <div class="ml-auto flex gap-2">
+        <a href="#" id="downloadIndexBtn" class="text-sm underline">Descarcă index JSON</a>
+      </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-4 pb-24">
+    <!-- Tabs OJI / ONI + search -->
     <div class="mt-6 flex items-center gap-2">
       <button id="tabOJI" class="px-4 py-2 rounded-full border border-black bg-black text-white font-medium">OJI</button>
       <button id="tabONI" class="px-4 py-2 rounded-full border font-medium">ONI</button>
       <div class="ml-auto flex items-center gap-2">
-        <input id="search" type="text" placeholder="Caută problemă / noțiune…" class="w-72 px-3 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-black" />
-        <button id="clearFilters" class="px-3 py-2 rounded-xl border">Curăță filtre</button>
+        <input id="search" type="text" placeholder="Caută problemă / descriere…" class="w-72 px-3 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-black" />
+        <button id="clearFilters" class="px-3 py-2 rounded-xl border">Curăță</button>
       </div>
     </div>
 
+    <!-- Lista de probleme -->
     <section class="mt-6">
       <div class="overflow-hidden rounded-2xl border bg-white">
         <table class="min-w-full">
@@ -44,17 +54,18 @@
             <tr>
               <th class="text-left px-4 py-3 w-16">#</th>
               <th class="text-left px-4 py-3">Problemă</th>
-              <th class="text-left px-4 py-3">Noțiuni</th>
+              <th class="text-left px-4 py-3">Descriere</th>
               <th class="text-right px-4 py-3 w-72">Acțiuni</th>
             </tr>
           </thead>
           <tbody id="problemsTbody" class="divide-y"></tbody>
         </table>
       </div>
-      <div id="emptyState" class="hidden mt-8 text-center text-gray-500">Niciun rezultat pentru filtrele curente.</div>
+      <div id="emptyState" class="hidden mt-8 text-center text-gray-500">Niciun rezultat pentru căutarea curentă.</div>
     </section>
   </main>
 
+  <!-- Modal viewer -->
   <div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4">
     <div class="w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-xl">
       <div class="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
@@ -66,37 +77,37 @@
   </div>
 
   <script>
+    // CSV-urile sunt în rădăcină
     const CSV_FILES = { OJI: 'probleme_OJI.csv', ONI: 'probleme_ONI.csv' };
+    // Convenție foldere
     const ROOTS = {
       OJI: { enunturi: 'OJI/enunturi', rezolvari: 'OJI/rezolvari' },
       ONI: { enunturi: 'ONI/enunturi', rezolvari: 'ONI/rezolvari' }
     };
 
+    // Elemente UI
     const tabOJI = document.getElementById('tabOJI');
     const tabONI = document.getElementById('tabONI');
     const searchInput = document.getElementById('search');
     const clearBtn = document.getElementById('clearFilters');
     const tbody = document.getElementById('problemsTbody');
-    const notionsWrap = document.getElementById('notionsChips');
     const emptyState = document.getElementById('emptyState');
     const modal = document.getElementById('modal');
     const modalClose = document.getElementById('modalClose');
     const modalBody = document.getElementById('modalBody');
     const modalTitle = document.getElementById('modalTitle');
+    const downloadIndexBtn = document.getElementById('downloadIndexBtn');
 
+    // State
     let activeTab = 'OJI';
     let dataByTab = { OJI: [], ONI: [] };
-    let allNotions = new Set();
-    let activeNotionFilters = new Set();
 
-    function uniqueNotions(list) {
-      const out = new Set();
-      list.forEach(n => {
-        if (!n) return;
-        const parts = String(n).split(/[;,|]/).map(x => x.trim()).filter(Boolean);
-        parts.forEach(p => out.add(p));
-      });
-      return Array.from(out).sort((a,b)=>a.localeCompare(b));
+    // Helpers
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;');
     }
 
     function parseCSV(url) {
@@ -113,66 +124,53 @@
 
     async function loadData() {
       for (const tab of ['OJI','ONI']) {
-        const rows = await parseCSV(CSV_FILES[tab]);
-        const normalized = rows.map((r, idx) => {
-          const name = r[Object.keys(r)[0]]; // prima coloană
-          const notions = uniqueNotions([r.notions, r.Notiuni, r.notiuni]).join('; ');
-          return { name, notions };
-        });
-        dataByTab[tab] = normalized;
+        try {
+          const rows = await parseCSV(CSV_FILES[tab]);
+          const normalized = rows.map((r, idx) => {
+            // CSV header: Problema,Notiuni (exact)
+            const name = r.Problema || r.name || r.Nume || r.Title || `Problema ${idx+1}`;
+            const notions = r.Notiuni || r.notions || r.notiuni || '';
+            return { name, notions };
+          });
+          dataByTab[tab] = normalized;
+        } catch (e) {
+          console.error('Eroare la încărcarea CSV', tab, e);
+          dataByTab[tab] = [];
+        }
       }
-      allNotions = new Set();
-      Object.values(dataByTab).flat().forEach(item => {
-        String(item.notions || '')
-          .split(/[;,|]/)
-          .map(x => x.trim())
-          .filter(Boolean)
-          .forEach(n => allNotions.add(n));
-      });
-      renderNotions();
       renderTable();
     }
 
-    function renderNotions() {
-      notionsWrap.innerHTML = '';
-      const notions = Array.from(allNotions).sort((a,b)=>a.localeCompare(b));
-      notions.forEach(n => {
-        const btn = document.createElement('button');
-        btn.className = 'chip';
-        btn.textContent = n;
-        btn.onclick = () => {
-          if (activeNotionFilters.has(n)) { activeNotionFilters.delete(n); btn.classList.remove('chip-active'); }
-          else { activeNotionFilters.add(n); btn.classList.add('chip-active'); }
-          renderTable();
-        };
-        notionsWrap.appendChild(btn);
-      });
-    }
-
-    function matchesFilters(item) {
+    function matchesSearch(item) {
       const q = searchInput.value.trim().toLowerCase();
-      const txt = (item.name + ' ' + (item.notions||'')).toLowerCase();
-      if (q && !txt.includes(q)) return false;
-      if (activeNotionFilters.size) {
-        const have = new Set(String(item.notions||'').split(/[;,|]/).map(x=>x.trim()).filter(Boolean));
-        for (const n of activeNotionFilters) if (!have.has(n)) return false;
-      }
-      return true;
+      if (!q) return true;
+      const txt = (item.name + ' ' + (item.notions || '')).toLowerCase();
+      return txt.includes(q);
     }
 
     function renderTable() {
-      tabOJI.className = activeTab === 'OJI' ? 'px-4 py-2 rounded-full border border-black bg-black text-white font-medium' : 'px-4 py-2 rounded-full border font-medium';
-      tabONI.className = activeTab === 'ONI' ? 'px-4 py-2 rounded-full border border-black bg-black text-white font-medium' : 'px-4 py-2 rounded-full border font-medium';
+      // Active tab UI
+      tabOJI.className = activeTab === 'OJI'
+        ? 'px-4 py-2 rounded-full border border-black bg-black text-white font-medium'
+        : 'px-4 py-2 rounded-full border font-medium';
+      tabONI.className = activeTab === 'ONI'
+        ? 'px-4 py-2 rounded-full border border-black bg-black text-white font-medium'
+        : 'px-4 py-2 rounded-full border font-medium';
 
-      const rows = dataByTab[activeTab].filter(matchesFilters);
+      const rows = dataByTab[activeTab].filter(matchesSearch);
       tbody.innerHTML = '';
 
       rows.forEach((item, i) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td class="px-4 py-3 text-sm text-gray-500">${i+1}</td>
-          <td class="px-4 py-3 font-medium">${item.name}</td>
-          <td class="px-4 py-3">${String(item.notions||'').split(/[;,|]/).map(n=>`<span class="chip mr-1 mb-1">${n}</span>`).join('')}</td>
+          <td class="px-4 py-3">
+            <div class="font-medium">${escapeHtml(item.name)}</div>
+            <div class="text-xs text-gray-500">${activeTab}</div>
+          </td>
+          <td class="px-4 py-3">
+            <p class="text-sm leading-relaxed whitespace-pre-wrap">${escapeHtml(item.notions)}</p>
+          </td>
           <td class="px-4 py-3 text-right">
             <button class="px-3 py-1.5 rounded-lg border mr-2" data-action="enunt">Enunț</button>
             <button class="px-3 py-1.5 rounded-lg border" data-action="rezolvare">Rezolvare</button>
@@ -186,6 +184,7 @@
       emptyState.classList.toggle('hidden', rows.length !== 0);
     }
 
+    // Construim căile direct din numele din CSV
     function resolveEnuntPath(item) {
       return `${ROOTS[activeTab].enunturi}/${item.name}_enunt.md`;
     }
@@ -195,26 +194,28 @@
 
     async function openEnunt(item) {
       modalTitle.textContent = `Enunț – ${item.name}`;
-      modalBody.innerHTML = 'Se încarcă…';
+      modalBody.innerHTML = '<div class="text-sm text-gray-500">Se încarcă…</div>';
       showModal();
+      const path = resolveEnuntPath(item);
       try {
-        const txt = await (await fetch(resolveEnuntPath(item))).text();
+        const txt = await (await fetch(path)).text();
         modalBody.innerHTML = `<article class="prose max-w-none">${marked.parse(txt)}</article>`;
-      } catch {
-        modalBody.innerHTML = 'Nu am putut încărca enunțul.';
+      } catch (e) {
+        modalBody.innerHTML = `<div class="text-red-600">Nu am putut încărca enunțul din <code>${escapeHtml(path)}</code>.</div>`;
       }
     }
 
     async function openRezolvare(item) {
       modalTitle.textContent = `Rezolvare – ${item.name}`;
-      modalBody.innerHTML = 'Se încarcă…';
+      modalBody.innerHTML = '<div class="text-sm text-gray-500">Se încarcă…</div>';
       showModal();
+      const path = resolveCppPath(item);
       try {
-        const txt = await (await fetch(resolveCppPath(item))).text();
-        modalBody.innerHTML = `<pre><code class="language-cpp">${txt.replaceAll('&','&amp;').replaceAll('<','&lt;')}</code></pre>`;
+        const txt = await (await fetch(path)).text();
+        modalBody.innerHTML = `<pre><code class="language-cpp">${escapeHtml(txt)}</code></pre>`;
         hljs.highlightAll();
-      } catch {
-        modalBody.innerHTML = 'Nu am putut încărca rezolvarea.';
+      } catch (e) {
+        modalBody.innerHTML = `<div class="text-red-600">Nu am putut încărca soluția din <code>${escapeHtml(path)}</code>.</div>`;
       }
     }
 
@@ -226,8 +227,18 @@
     modalClose.onclick = hideModal;
     modal.addEventListener('click', (e)=>{ if(e.target===modal) hideModal(); });
     searchInput.addEventListener('input', renderTable);
-    clearBtn.onclick = () => { searchInput.value=''; activeNotionFilters.clear(); renderNotions(); renderTable(); };
+    clearBtn.onclick = () => { searchInput.value=''; renderTable(); };
 
+    downloadIndexBtn.onclick = () => {
+      const blob = new Blob([ JSON.stringify({ generatedAt: new Date().toISOString(), tabs: dataByTab }, null, 2) ], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'index_probleme.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+
+    // start
     loadData();
   </script>
 </body>
