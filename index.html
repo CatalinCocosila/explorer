@@ -4,74 +4,101 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>OJI / ONI – Explorer</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/font/lucide.css">
+  <!-- În producție folosește un CSS precompilat. Vezi dist/styles.css (Tailwind build) -->
+  <link rel="stylesheet" href="dist/styles.css">
+  <!-- Highlight.js pentru .cpp -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+  <!-- Marked (markdown -> HTML) -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- PapaParse (CSV parser) -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
-    ::-webkit-scrollbar { width: 10px; height: 10px; }
-    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 9999px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    .chip { @apply inline-flex items-center px-2 py-0.5 rounded-full border text-xs mr-1 mb-1; }
-    .chip-active { @apply bg-black text-white border-black; }
+    /* fallback minim dacă dist/styles.css nu există încă */
+    body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;}
+    .container{max-width:1120px;margin:0 auto;padding:0 1rem}
+    .btn{border:1px solid #111;border-radius:12px;padding:.5rem .75rem;background:#fff}
+    .btn.primary{background:#111;color:#fff}
+    .chip{display:inline-flex;align-items:center;border:1px solid #ddd;border-radius:999px;padding:.2rem .5rem;font-size:.75rem;margin:.15rem}
+    .chip-active{background:#111;color:#fff;border-color:#111}
+    table{width:100%;border-collapse:collapse}
+    thead{background:#f3f4f6;color:#6b7280;font-size:.75rem;text-transform:uppercase}
+    th,td{padding:.75rem}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;overflow:hidden}
+    .muted{color:#6b7280}
+    .header{position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter:saturate(180%) blur(6px);border-bottom:1px solid #e5e7eb}
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);padding:1rem}
+    .modal.show{display:flex}
+    .modal-card{width:100%;max-width:64rem;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.2)}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid #e5e7eb;background:#f9fafb}
+    .modal-body{padding:1rem;max-height:70vh;overflow:auto}
   </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
-  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
-      <span class="text-2xl font-bold tracking-tight">OJI / ONI – Explorer</span>
-      <span class="text-sm text-gray-500">Enunțuri, soluții și noțiuni explicite</span>
+  <header class="header">
+    <div class="container" style="padding:.75rem 1rem;display:flex;align-items:center;gap:.75rem">
+      <span style="font-size:1.5rem;font-weight:700;letter-spacing:-.02em">OJI / ONI – Explorer</span>
+      <span class="muted" style="font-size:.875rem">Enunțuri, soluții și noțiuni explicite</span>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 pb-24">
-    <div class="mt-6 flex items-center gap-2">
-      <button id="tabOJI" class="px-4 py-2 rounded-full border border-black bg-black text-white font-medium">OJI</button>
-      <button id="tabONI" class="px-4 py-2 rounded-full border font-medium">ONI</button>
-      <div class="ml-auto flex items-center gap-2">
-        <input id="search" type="text" placeholder="Caută problemă / noțiune…" class="w-72 px-3 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-black" />
-        <button id="clearFilters" class="px-3 py-2 rounded-xl border">Curăță filtre</button>
+  <main class="container" style="padding-bottom:6rem">
+    <!-- Tabs OJI / ONI + Search -->
+    <div style="margin-top:1.5rem;display:flex;align-items:center;gap:.5rem">
+      <button id="tabOJI" class="btn primary">OJI</button>
+      <button id="tabONI" class="btn">ONI</button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:.5rem">
+        <input id="search" type="text" placeholder="Caută problemă / noțiune…" style="width:18rem;border:1px solid #e5e7eb;border-radius:12px;padding:.5rem .75rem" />
+        <button id="clearFilters" class="btn">Curăță filtre</button>
       </div>
     </div>
 
-    <section class="mt-6">
-      <div class="overflow-hidden rounded-2xl border bg-white">
-        <table class="min-w-full">
-          <thead class="bg-gray-100 text-xs uppercase text-gray-600">
+    <!-- Noțiuni (chips) -->
+    <section style="margin-top:1rem">
+      <div class="muted" style="font-size:.875rem;margin-bottom:.5rem">Filtrează după noțiuni:</div>
+      <div id="notionsChips" style="display:flex;flex-wrap:wrap"></div>
+    </section>
+
+    <!-- Lista de probleme -->
+    <section style="margin-top:1.5rem">
+      <div class="card">
+        <table>
+          <thead>
             <tr>
-              <th class="text-left px-4 py-3 w-16">#</th>
-              <th class="text-left px-4 py-3">Problemă</th>
-              <th class="text-left px-4 py-3">Noțiuni</th>
-              <th class="text-right px-4 py-3 w-72">Acțiuni</th>
+              <th class="text-left w-16">#</th>
+              <th class="text-left">Problemă</th>
+              <th class="text-left">Noțiuni</th>
+              <th class="text-right w-72">Acțiuni</th>
             </tr>
           </thead>
-          <tbody id="problemsTbody" class="divide-y"></tbody>
+          <tbody id="problemsTbody"></tbody>
         </table>
       </div>
-      <div id="emptyState" class="hidden mt-8 text-center text-gray-500">Niciun rezultat pentru filtrele curente.</div>
+      <div id="emptyState" style="display:none;margin-top:2rem;text-align:center" class="muted">Niciun rezultat pentru filtrele curente.</div>
     </section>
   </main>
 
-  <div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4">
-    <div class="w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-xl">
-      <div class="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
-        <div id="modalTitle" class="font-semibold"></div>
-        <button id="modalClose" class="px-3 py-1 rounded-lg border">Închide</button>
+  <!-- Modal viewer -->
+  <div id="modal" class="modal">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div id="modalTitle" style="font-weight:600"></div>
+        <button id="modalClose" class="btn">Închide</button>
       </div>
-      <div id="modalBody" class="p-4 max-h-[70vh] overflow-auto"></div>
+      <div id="modalBody" class="modal-body"></div>
     </div>
   </div>
 
   <script>
+    // CSV-urile sunt la rădăcină și au headerul: Problema,Notiuni
     const CSV_FILES = { OJI: 'probleme_OJI.csv', ONI: 'probleme_ONI.csv' };
     const ROOTS = {
       OJI: { enunturi: 'OJI/enunturi', rezolvari: 'OJI/rezolvari' },
       ONI: { enunturi: 'ONI/enunturi', rezolvari: 'ONI/rezolvari' }
     };
 
+    // Elemente UI
     const tabOJI = document.getElementById('tabOJI');
     const tabONI = document.getElementById('tabONI');
     const searchInput = document.getElementById('search');
@@ -79,16 +106,20 @@
     const tbody = document.getElementById('problemsTbody');
     const notionsWrap = document.getElementById('notionsChips');
     const emptyState = document.getElementById('emptyState');
+
+    // Modal
     const modal = document.getElementById('modal');
     const modalClose = document.getElementById('modalClose');
     const modalBody = document.getElementById('modalBody');
     const modalTitle = document.getElementById('modalTitle');
 
+    // State
     let activeTab = 'OJI';
     let dataByTab = { OJI: [], ONI: [] };
     let allNotions = new Set();
     let activeNotionFilters = new Set();
 
+    // Utils
     function uniqueNotions(list) {
       const out = new Set();
       list.forEach(n => {
@@ -113,14 +144,21 @@
 
     async function loadData() {
       for (const tab of ['OJI','ONI']) {
-        const rows = await parseCSV(CSV_FILES[tab]);
-        const normalized = rows.map((r, idx) => {
-          const name = r[Object.keys(r)[0]]; // prima coloană
-          const notions = uniqueNotions([r.notions, r.Notiuni, r.notiuni]).join('; ');
-          return { name, notions };
-        });
-        dataByTab[tab] = normalized;
+        try {
+          const rows = await parseCSV(CSV_FILES[tab]);
+          const normalized = rows.map((r, idx) => {
+            const name = r.Problema || r.name || r.Nume || r.problema || r.Problem || r.Title || `Problema ${idx+1}`;
+            const notions = uniqueNotions([r.Notiuni, r.notions, r.notiuni, r.Tags, r.tags]).join('; ');
+            return { name, notions };
+          });
+          dataByTab[tab] = normalized;
+        } catch (e) {
+          console.error('Eroare la încărcarea CSV', tab, e);
+          dataByTab[tab] = [];
+        }
       }
+
+      // Colectează noțiuni
       allNotions = new Set();
       Object.values(dataByTab).flat().forEach(item => {
         String(item.notions || '')
@@ -129,6 +167,7 @@
           .filter(Boolean)
           .forEach(n => allNotions.add(n));
       });
+
       renderNotions();
       renderTable();
     }
@@ -161,8 +200,9 @@
     }
 
     function renderTable() {
-      tabOJI.className = activeTab === 'OJI' ? 'px-4 py-2 rounded-full border border-black bg-black text-white font-medium' : 'px-4 py-2 rounded-full border font-medium';
-      tabONI.className = activeTab === 'ONI' ? 'px-4 py-2 rounded-full border border-black bg-black text-white font-medium' : 'px-4 py-2 rounded-full border font-medium';
+      // Tab UI
+      tabOJI.className = activeTab === 'OJI' ? 'btn primary' : 'btn';
+      tabONI.className = activeTab === 'ONI' ? 'btn primary' : 'btn';
 
       const rows = dataByTab[activeTab].filter(matchesFilters);
       tbody.innerHTML = '';
@@ -170,20 +210,19 @@
       rows.forEach((item, i) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="px-4 py-3 text-sm text-gray-500">${i+1}</td>
-          <td class="px-4 py-3 font-medium">${item.name}</td>
-          <td class="px-4 py-3">${String(item.notions||'').split(/[;,|]/).map(n=>`<span class="chip mr-1 mb-1">${n}</span>`).join('')}</td>
-          <td class="px-4 py-3 text-right">
-            <button class="px-3 py-1.5 rounded-lg border mr-2" data-action="enunt">Enunț</button>
-            <button class="px-3 py-1.5 rounded-lg border" data-action="rezolvare">Rezolvare</button>
-          </td>
-        `;
+          <td class="muted">${i+1}</td>
+          <td><div style="font-weight:600">${item.name}</div><div class="muted" style="font-size:.75rem">${activeTab}</div></td>
+          <td>${String(item.notions||'').split(/[;,|]/).filter(Boolean).map(n=>`<span class="chip">${n}</span>`).join('')}</td>
+          <td style="text-align:right">
+            <button class="btn" data-action="enunt">Enunț</button>
+            <button class="btn" data-action="rezolvare">Rezolvare</button>
+          </td>`;
         tr.querySelector('[data-action="enunt"]').onclick = () => openEnunt(item);
         tr.querySelector('[data-action="rezolvare"]').onclick = () => openRezolvare(item);
         tbody.appendChild(tr);
       });
 
-      emptyState.classList.toggle('hidden', rows.length !== 0);
+      emptyState.style.display = rows.length ? 'none' : 'block';
     }
 
     function resolveEnuntPath(item) {
@@ -196,35 +235,34 @@
     async function openEnunt(item) {
       modalTitle.textContent = `Enunț – ${item.name}`;
       modalBody.innerHTML = 'Se încarcă…';
-      showModal();
+      modal.classList.add('show');
       try {
         const txt = await (await fetch(resolveEnuntPath(item))).text();
         modalBody.innerHTML = `<article class="prose max-w-none">${marked.parse(txt)}</article>`;
-      } catch {
-        modalBody.innerHTML = 'Nu am putut încărca enunțul.';
+      } catch (e) {
+        modalBody.innerHTML = `Nu am putut încărca enunțul din <code>${resolveEnuntPath(item)}</code>.`;
       }
     }
 
     async function openRezolvare(item) {
       modalTitle.textContent = `Rezolvare – ${item.name}`;
       modalBody.innerHTML = 'Se încarcă…';
-      showModal();
+      modal.classList.add('show');
       try {
         const txt = await (await fetch(resolveCppPath(item))).text();
-        modalBody.innerHTML = `<pre><code class="language-cpp">${txt.replaceAll('&','&amp;').replaceAll('<','&lt;')}</code></pre>`;
+        const esc = txt.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+        modalBody.innerHTML = `<pre><code class="language-cpp">${esc}</code></pre>`;
         hljs.highlightAll();
-      } catch {
-        modalBody.innerHTML = 'Nu am putut încărca rezolvarea.';
+      } catch (e) {
+        modalBody.innerHTML = `Nu am putut încărca rezolvarea din <code>${resolveCppPath(item)}</code>.`;
       }
     }
 
-    function showModal() { modal.classList.remove('hidden'); modal.classList.add('flex'); }
-    function hideModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+    modalClose.onclick = () => modal.classList.remove('show');
+    modal.addEventListener('click', (e)=>{ if(e.target===modal) modal.classList.remove('show'); });
 
     tabOJI.onclick = () => { activeTab = 'OJI'; renderTable(); };
     tabONI.onclick = () => { activeTab = 'ONI'; renderTable(); };
-    modalClose.onclick = hideModal;
-    modal.addEventListener('click', (e)=>{ if(e.target===modal) hideModal(); });
     searchInput.addEventListener('input', renderTable);
     clearBtn.onclick = () => { searchInput.value=''; activeNotionFilters.clear(); renderNotions(); renderTable(); };
 
