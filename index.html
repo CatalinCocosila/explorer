@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OJI / ONI – Explorer</title>
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/font/lucide.css">
+  <!-- Highlight.js (pentru .cpp) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cpp.min.js"></script>
+  <!-- Marked (markdown -> HTML) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- PapaParse (CSV parser robust) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    /* scrollbar finuță */
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 9999px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    .chip { @apply inline-flex items-center px-2 py-0.5 rounded-full border text-xs mr-1 mb-1; }
+    .chip-active { @apply bg-black text-white border-black; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur border-b">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+      <span class="text-2xl font-bold tracking-tight">OJI / ONI – Explorer</span>
+      <span class="text-sm text-gray-500">Enunțuri, soluții și noțiuni explicite</span>
+      <div class="ml-auto flex gap-2">
+        <a href="#" id="downloadIndexBtn" class="text-sm underline">Descarcă index JSON</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 pb-24">
+    <!-- Tabs OJI / ONI -->
+    <div class="mt-6 flex items-center gap-2">
+      <button id="tabOJI" class="px-4 py-2 rounded-full border border-black bg-black text-white font-medium">OJI</button>
+      <button id="tabONI" class="px-4 py-2 rounded-full border font-medium">ONI</button>
+      <div class="ml-auto flex items-center gap-2">
+        <input id="search" type="text" placeholder="Caută problemă / noțiune…" class="w-72 px-3 py-2 rounded-xl border focus:outline-none focus:ring-2 focus:ring-black" />
+        <button id="clearFilters" class="px-3 py-2 rounded-xl border">Curăță filtre</button>
+      </div>
+    </div>
+
+    <!-- Noțiuni (chips) -->
+    <section class="mt-4" id="notionsSection">
+      <div class="text-sm text-gray-600 mb-2">Filtrează după noțiuni:</div>
+      <div id="notionsChips" class="flex flex-wrap"></div>
+    </section>
+
+    <!-- CSV local fallback (pentru rulare fără server HTTP) -->
+    <section id="csvLocalPanel" class="hidden mt-6 border rounded-2xl bg-white p-4">
+      <div class="flex items-start gap-4">
+        <div class="shrink-0 mt-1"><i class="lucide-alert-triangle"></i></div>
+        <div class="text-sm">
+          <div class="font-medium">Nu pot încărca fișierele CSV prin <code>file://</code> (blocaj CORS).</div>
+          <p class="mt-1 text-gray-600">Ai două opțiuni:
+            <br>1) Rulează un server local (recomandat): <code>python -m http.server 8080</code> sau <code>npx serve</code> și deschide <code>http://localhost:8080/</code>.
+            <br>2) Încarcă manual CSV-urile aici:</p>
+          <div class="mt-3 grid gap-2 sm:grid-cols-2">
+            <label class="block">CSV OJI
+              <input id="csvOjiInput" type="file" accept=".csv" class="mt-1 block w-full text-sm border rounded-lg p-2" />
+            </label>
+            <label class="block">CSV ONI
+              <input id="csvOniInput" type="file" accept=".csv" class="mt-1 block w-full text-sm border rounded-lg p-2" />
+            </label>
+          </div>
+          <div class="mt-3 flex items-center gap-2">
+            <button id="csvLoadBtn" class="px-3 py-2 rounded-xl border">Încarcă CSV-urile locale</button>
+            <span class="text-xs text-gray-500">După încărcare, filtrele și căutarea vor funcționa normal.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lista de probleme -->
+    <section class="mt-6">
+      <div class="overflow-hidden rounded-2xl border bg-white">
+        <table class="min-w-full">
+          <thead class="bg-gray-100 text-xs uppercase text-gray-600">
+            <tr>
+              <th class="text-left px-4 py-3 w-16">#</th>
+              <th class="text-left px-4 py-3">Problemă</th>
+              <th class="text-left px-4 py-3">Noțiuni</th>
+              <th class="text-right px-4 py-3 w-72">Acțiuni</th>
+            </tr>
+          </thead>
+          <tbody id="problemsTbody" class="divide-y"></tbody>
+        </table>
+      </div>
+      <div id="emptyState" class="hidden mt-8 text-center text-gray-500">Niciun rezultat pentru filtrele curente.</div>
+    </section>
+  </main>
+
+  <!-- Modal viewer -->
+  <div id="modal" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4">
+    <div class="w-full max-w-4xl bg-white rounded-2xl overflow-hidden shadow-xl">
+      <div class="flex items-center justify-between px-4 py-3 border-b bg-gray-50">
+        <div id="modalTitle" class="font-semibold"></div>
+        <button id="modalClose" class="px-3 py-1 rounded-lg border">Închide</button>
+      </div>
+      <div id="modalBody" class="p-4 max-h-[70vh] overflow-auto">
+        <!-- conținut enunț/soluție -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Config: numele fișierelor CSV (plasate în rădăcina site-ului)
+	const CSV_FILES = {
+	OJI: 'probleme_OJI.csv',
+	ONI: 'probleme_ONI.csv'
+	};
+
+    // Convenție foldere (ajustează dacă ai structură diferită)
+    const ROOTS = {
+      OJI: { enunturi: 'OJI/enunturi', rezolvari: 'OJI/rezolvari' },
+      ONI: { enunturi: 'ONI/enunturi', rezolvari: 'ONI/rezolvari' }
+    };
+
+    // Elemente
+    const tabOJI = document.getElementById('tabOJI');
+    const tabONI = document.getElementById('tabONI');
+    const searchInput = document.getElementById('search');
+    const clearBtn = document.getElementById('clearFilters');
+    const tbody = document.getElementById('problemsTbody');
+    const notionsWrap = document.getElementById('notionsChips');
+    const emptyState = document.getElementById('emptyState');
+    const downloadIndexBtn = document.getElementById('downloadIndexBtn');
+    // Local CSV inputs (fallback)
+    const csvLocalPanel = document.getElementById('csvLocalPanel');
+    const csvOjiInput = document.getElementById('csvOjiInput');
+    const csvOniInput = document.getElementById('csvOniInput');
+    const csvLoadBtn = document.getElementById('csvLoadBtn');
+
+    let csvFetchFailed = false;
+
+    // Modal
+    const modal = document.getElementById('modal');
+    const modalClose = document.getElementById('modalClose');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalTitle');
+
+    // State
+    let activeTab = 'OJI';
+    let dataByTab = { OJI: [], ONI: [] }; // fiecare element: {name, notions[], slug?, file_enunt?, file_cpp?}
+    let allNotions = new Set();
+    let activeNotionFilters = new Set();
+
+    // Utils
+    const stripDiacritics = (s) => s
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/ș/g, 's').replace(/Ş/g, 'S')
+      .replace(/ţ/g, 't').replace(/Ț/g, 'T')
+      .replace(/ă/g, 'a').replace(/Ă/g, 'A')
+      .replace(/î/g, 'i').replace(/Î/g, 'I')
+      .replace(/â/g, 'a').replace(/Â/g, 'A');
+
+    const toSlug = (name) => stripDiacritics(name)
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\s_-]/g, '')
+      .replace(/[\s]+/g, '_')
+      .replace(/_+/g, '_');
+
+    function uniqueNotions(list) {
+      const out = new Set();
+      list.forEach(n => {
+        if (!n) return;
+        const parts = String(n).split(/[;,|]/).map(x => x.trim()).filter(Boolean);
+        parts.forEach(p => out.add(p));
+      });
+      return Array.from(out).sort((a,b)=>a.localeCompare(b));
+    }
+
+    function parseCSV(url) {
+      return new Promise((resolve, reject) => {
+        Papa.parse(url, {
+          header: true,
+          download: true,
+          skipEmptyLines: true,
+          complete: (results) => resolve(results.data),
+          error: reject
+        });
+      });
+    }
+
+    async function loadData() {
+      for (const tab of ['OJI','ONI']) {
+        try {
+          const rows = await parseCSV(CSV_FILES[tab]);
+          const normalized = rows.map((r, idx) => {
+            const name = r.name || r.Nume || r.problema || r.Problem || r.Title || `Problema ${idx+1}`;
+            const notions = uniqueNotions([r.notions, r.Notiuni, r.notiuni, r.Tags, r.tags]).join('; ');
+            const slug = r.slug || r.file || r.Filename || r.fisier || toSlug(name);
+            // Posibile coloane explicite de fișier
+            const file_enunt = r.enunt || r.enunt_md || r.md || '';
+            const file_cpp = r.cpp || r.rezolvare || r.solution || '';
+            return { name, notions, slug, file_enunt, file_cpp };
+          });
+          dataByTab[tab] = normalized;
+        } catch (e) {
+          console.error('Eroare la încărcarea CSV', tab, e);
+          csvFetchFailed = true;
+          dataByTab[tab] = [];
+        }
+      }
+
+      // Colectează noțiuni
+      allNotions = new Set();
+      Object.values(dataByTab).flat().forEach(item => {
+        String(item.notions || '')
+          .split(/[;,|]/)
+          .map(x => x.trim())
+          .filter(Boolean)
+          .forEach(n => allNotions.add(n));
+      });
+
+      if (csvFetchFailed) showLocalPanel();
+
+      renderNotions();
+      renderTable();
+    }
+
+    function renderNotions() {
+      notionsWrap.innerHTML = '';
+      const notions = Array.from(allNotions).sort((a,b)=>a.localeCompare(b));
+      notions.forEach(n => {
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.textContent = n;
+        btn.onclick = () => {
+          if (activeNotionFilters.has(n)) { activeNotionFilters.delete(n); btn.classList.remove('chip-active'); }
+          else { activeNotionFilters.add(n); btn.classList.add('chip-active'); }
+          renderTable();
+        };
+        notionsWrap.appendChild(btn);
+      });
+    }
+
+    function matchesFilters(item) {
+      const q = searchInput.value.trim().toLowerCase();
+      const txt = (item.name + ' ' + (item.notions||'')).toLowerCase();
+      if (q && !txt.includes(q)) return false;
+      if (activeNotionFilters.size) {
+        const have = new Set(String(item.notions||'').split(/[;,|]/).map(x=>x.trim()).filter(Boolean));
+        for (const n of activeNotionFilters) if (!have.has(n)) return false;
+      }
+      return true;
+    }
+
+    function renderTable() {
+      // active tab UI
+      if (activeTab === 'OJI') {
+        tabOJI.className = 'px-4 py-2 rounded-full border border-black bg-black text-white font-medium';
+        tabONI.className = 'px-4 py-2 rounded-full border font-medium';
+      } else {
+        tabONI.className = 'px-4 py-2 rounded-full border border-black bg-black text-white font-medium';
+        tabOJI.className = 'px-4 py-2 rounded-full border font-medium';
+      }
+
+      const rows = dataByTab[activeTab].filter(matchesFilters);
+      tbody.innerHTML = '';
+
+      rows.forEach((item, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-4 py-3 text-sm text-gray-500">${i+1}</td>
+          <td class="px-4 py-3">
+            <div class="font-medium">${item.name}</div>
+            <div class="text-xs text-gray-500">${activeTab}</div>
+          </td>
+          <td class="px-4 py-3">
+            ${String(item.notions||'').split(/[;,|]/).filter(Boolean).map(n=>`<span class="chip mr-1 mb-1">${n}</span>`).join('')}
+          </td>
+          <td class="px-4 py-3 text-right">
+            <button class="px-3 py-1.5 rounded-lg border mr-2" data-action="enunt">Enunț</button>
+            <button class="px-3 py-1.5 rounded-lg border" data-action="rezolvare">Rezolvare</button>
+          </td>
+        `;
+
+        tr.querySelector('[data-action="enunt"]').onclick = () => openEnunt(item);
+        tr.querySelector('[data-action="rezolvare"]').onclick = () => openRezolvare(item);
+
+        tbody.appendChild(tr);
+      });
+
+      emptyState.classList.toggle('hidden', rows.length !== 0);
+    }
+
+    async function openEnunt(item) {
+      modalTitle.textContent = `Enunț – ${item.name}`;
+      modalBody.innerHTML = '<div class="text-sm text-gray-500">Se încarcă…</div>';
+      showModal();
+
+      const path = resolveEnuntPath(item);
+      try {
+        const txt = await (await fetch(path)).text();
+        const html = marked.parse(txt);
+        modalBody.innerHTML = `<article class="prose max-w-none">${html}</article>`;
+      } catch (e) {
+        modalBody.innerHTML = `<div class="text-red-600">Nu am putut încărca enunțul din <code>${path}</code>. Verifică structura folderelor sau adaugă o coloană <code>enunt</code> în CSV.</div>`;
+      }
+    }
+
+    async function openRezolvare(item) {
+      modalTitle.textContent = `Rezolvare – ${item.name}`;
+      modalBody.innerHTML = '<div class="text-sm text-gray-500">Se încarcă…</div>';
+      showModal();
+
+      const path = resolveCppPath(item);
+      try {
+        const txt = await (await fetch(path)).text();
+        modalBody.innerHTML = `<pre><code class="language-cpp">${escapeHtml(txt)}</code></pre>`;
+        hljs.highlightAll();
+      } catch (e) {
+        modalBody.innerHTML = `<div class="text-red-600">Nu am putut încărca soluția din <code>${path}</code>. Verifică structura folderelor sau adaugă o coloană <code>cpp</code> în CSV.</div>`;
+      }
+    }
+
+    function resolveEnuntPath(item) {
+      // dacă CSV oferă un câmp explicit, îl folosim
+      if (item.file_enunt) return item.file_enunt;
+      const base = ROOTS[activeTab].enunturi;
+      const candidates = [
+        `${base}/${item.slug}.md`,
+        `${base}/${toSlug(item.name)}.md`,
+        `${base}/${item.name}.md`,
+        `${base}/${item.slug}.markdown`
+      ];
+      return candidates[0];
+    }
+
+    function resolveCppPath(item) {
+      if (item.file_cpp) return item.file_cpp;
+      const base = ROOTS[activeTab].rezolvari;
+      const candidates = [
+        `${base}/${item.slug}.cpp`,
+        `${base}/${toSlug(item.name)}.cpp`,
+        `${base}/${item.name}.cpp`,
+        `${base}/${item.slug}.cc`
+      ];
+      return candidates[0];
+    }
+
+    function escapeHtml(s) { return s
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;'); }
+
+    function showModal() { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+    function hideModal() { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+
+    tabOJI.onclick = () => { activeTab = 'OJI'; renderTable(); };
+    tabONI.onclick = () => { activeTab = 'ONI'; renderTable(); };
+    modalClose.onclick = hideModal;
+    modal.addEventListener('click', (e)=>{ if(e.target===modal) hideModal(); });
+    searchInput.addEventListener('input', renderTable);
+    clearBtn.onclick = () => { searchInput.value=''; activeNotionFilters.clear(); renderNotions(); renderTable(); };
+
+    downloadIndexBtn.onclick = () => {
+      const blob = new Blob([
+        JSON.stringify({
+          generatedAt: new Date().toISOString(),
+          tabs: {
+            OJI: dataByTab.OJI,
+            ONI: dataByTab.ONI
+          }
+        }, null, 2)
+      ], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'index_probleme.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    };
+
+    // Fallback: parsare CSV din fișiere locale
+    function parseCSVFile(file) {
+      return new Promise((resolve, reject) => {
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => resolve(results.data),
+          error: reject
+        });
+      });
+    }
+
+    async function handleLocalLoad() {
+      const files = { OJI: csvOjiInput?.files?.[0], ONI: csvOniInput?.files?.[0] };
+      if (!files.OJI && !files.ONI) return;
+      for (const tab of ['OJI','ONI']) {
+        if (!files[tab]) { dataByTab[tab] = []; continue; }
+        const rows = await parseCSVFile(files[tab]);
+        const normalized = rows.map((r, idx) => {
+          const name = r.name || r.Nume || r.problema || r.Problem || r.Title || `Problema ${idx+1}`;
+          const notions = uniqueNotions([r.notions, r.Notiuni, r.notiuni, r.Tags, r.tags]).join('; ');
+          const slug = r.slug || r.file || r.Filename || r.fisier || toSlug(name);
+          const file_enunt = r.enunt || r.enunt_md || r.md || '';
+          const file_cpp = r.cpp || r.rezolvare || r.solution || '';
+          return { name, notions, slug, file_enunt, file_cpp };
+        });
+        dataByTab[tab] = normalized;
+      }
+      // Rebuild notions set
+      allNotions = new Set();
+      Object.values(dataByTab).flat().forEach(item => {
+        String(item.notions || '')
+          .split(/[;,|]/)
+          .map(x => x.trim())
+          .filter(Boolean)
+          .forEach(n => allNotions.add(n));
+      });
+      renderNotions();
+      renderTable();
+    }
+
+    function showLocalPanel() { csvLocalPanel?.classList.remove('hidden'); }
+
+    csvLoadBtn?.addEventListener('click', handleLocalLoad);
+
+    // Inițiere
+    loadData();
+  </script>
+</body>
+</html>
