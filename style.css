@@ -1,0 +1,8 @@
+/* Stiluri personalizate minime */
+body {
+  font-family: system-ui, sans-serif;
+}
+
+table td p {
+  margin: 0;
+}
