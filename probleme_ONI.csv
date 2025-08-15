@@ -1,4 +1,4 @@
-﻿Problema,notiuni
+﻿Problema,Descriere
 1133-stampile,Descompunerea numerelor în cifre zecimale; tablouri de frecvență pentru cifre; numărarea cifrelor distincte; selecția repetată a maximului pentru ordonare după frecvență; parcurgeri liniare și analiză de complexitate O(total_cifre).
 1134-turneu,Numărare pe frecvențe într-un tablou; determinarea parității aparițiilor (impar/pereche); găsirea valorii maxime și a indicilor corespunzători; numărarea elementelor cu frecvență zero; procesare liniară.
 547-balon,Actualizări pe submatrici cu tablou de diferențe 2D și prefix-sum 2D; tratarea marginilor (clamp pe borduri); aritmetică modulară și împărțire cu rest pentru praguri k; numărare pe niveluri (histograme); complexitate O(n·m + p).
