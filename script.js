@@ -26,6 +26,11 @@ const toSlug = (name) =>
     .replace(/[^a-z0-9\s_-]/g, '')
     .replace(/\s+/g, '_')
     .replace(/_+/g, '_');
+marked.setOptions({
+  gfm: true,
+  breaks: true, // Enter = <br>
+  smartypants: false
+});
 
 function normalizeKeys(obj) {
   const out = {};
@@ -54,7 +59,7 @@ async function loadData() {
         const name = r['problema'] || r['problemă'] || r['name'] || `Problema ${idx + 1}`;
         const descriere = r['descriere'] || r['notiuni'] || r['noțiuni'] || '';
 
-        // extragem un număr de la început (ex: 922 din "922-furnica")
+        // extragem un numar de la inceput (ex: 922 din "922-furnica")
         const match = name.match(/^(\d+)/);
         const id = match ? match[1] : '';
 
@@ -135,9 +140,30 @@ async function openEnunt(item) {
   ].filter(Boolean);
 
   try {
-    const md = await fetchFirst(candidates, true);
+    let md = await fetchFirst(candidates, true);
+
+    // Normalizeaza linii, transforma '\n' literal în newline
+    md = md.replace(/\r\n/g, '\n').replace(/\\n/g, '\n');
+
     const html = marked.parse(md);
     modalBody.innerHTML = DOMPurify.sanitize(html);
+
+    // Randare formule: $, $$, \( \), \[ \]
+    if (window.renderMathInElement) {
+      renderMathInElement(modalBody, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$',  right: '$',  display: false },
+          { left: '\\(', right: '\\)', display: false },
+          { left: '\\[', right: '\\]', display: true }
+        ],
+        throwOnError: false
+      });
+    }
+
+    // Highlight pentru blocurile de cod din enunț
+    modalBody.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+
   } catch {
     modalBody.innerHTML = `<div class="text-red-600">Enunțul nu a putut fi încărcat.<br><small>${candidates.join('<br>')}</small></div>`;
   }
