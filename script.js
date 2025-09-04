@@ -143,8 +143,12 @@ async function openRezolvare(item) {
   showModal();
 
   const base = ROOTS[activeTab].rezolvari;
+
   const candidates = [
-    item.fileSol && `${base}/${item.fileSol}`,
+    item.fileSol && `${base}/${item.fileSol}`,                
+    item.id && `${base}/${item.id}-${item.slug}_rezolvare.cpp`,
+    `${base}/${item.slug}_rezolvare.cpp`,
+    item.id && `${base}/${item.id}_rezolvare.cpp`,
     item.id && `${base}/${item.id}-${item.slug}.cpp`,
     `${base}/${item.slug}.cpp`,
     item.id && `${base}/${item.id}.cpp`
@@ -156,7 +160,7 @@ async function openRezolvare(item) {
     const pre = document.createElement('pre');
     const codeEl = document.createElement('code');
     codeEl.className = 'language-cpp';
-    codeEl.textContent = code;
+    codeEl.textContent = code; // escape automat
 
     pre.appendChild(codeEl);
     modalBody.innerHTML = '';
@@ -167,6 +171,7 @@ async function openRezolvare(item) {
     modalBody.innerHTML = `<div class="text-red-600">Rezolvarea nu a putut fi încărcată.<br><small>${candidates.join('<br>')}</small></div>`;
   }
 }
+
 
 function showModal() {
   modal.classList.remove('hidden');
