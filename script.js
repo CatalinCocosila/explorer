@@ -142,13 +142,20 @@ async function openEnunt(item) {
   try {
     let md = await fetchFirst(candidates, true);
 
-    // Normalizeaza linii, transforma '\n' literal în newline
+    // Normalizează CRLF și \n
     md = md.replace(/\r\n/g, '\n').replace(/\\n/g, '\n');
+
+    // ~[imgX.png] -> ![ ](https://kilonova.ro/assets/problem/{id}/attachment/imgX.png)
+    if (item.id) {
+      md = md.replace(/~\[([^\]]+)\]/g, (m, filename) => {
+        return `![](${`https://kilonova.ro/assets/problem/${item.id}/attachment/${filename}`})`;
+      });
+    }
 
     const html = marked.parse(md);
     modalBody.innerHTML = DOMPurify.sanitize(html);
 
-    // Randare formule: $, $$, \( \), \[ \]
+    // Randare formule LaTeX
     if (window.renderMathInElement) {
       renderMathInElement(modalBody, {
         delimiters: [
@@ -161,13 +168,14 @@ async function openEnunt(item) {
       });
     }
 
-    // Highlight pentru blocurile de cod din enunț
+    // Syntax highlight pentru cod
     modalBody.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
 
   } catch {
     modalBody.innerHTML = `<div class="text-red-600">Enunțul nu a putut fi încărcat.<br><small>${candidates.join('<br>')}</small></div>`;
   }
 }
+
 
 async function openRezolvare(item) {
   modalTitle.textContent = `Rezolvare – ${item.name}`;
