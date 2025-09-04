@@ -51,12 +51,17 @@ async function loadData() {
       const rows = await parseCSV(CSV_FILES[tab]);
       const norm = rows.map((raw, idx) => {
         const r = normalizeKeys(raw);
-        const name = r['problema'] || r['problema '] || r['problemă'] || r['name'] || `Problema ${idx + 1}`;
-        const descriere = r['descriere'] || r['notiuni'] || r['notiuni '] || r['noțiuni'] || '';
-        const id = String(r['id'] || r['nr'] || r['numar'] || r['număr'] || '').trim();
+        const name = r['problema'] || r['problemă'] || r['name'] || `Problema ${idx + 1}`;
+        const descriere = r['descriere'] || r['notiuni'] || r['noțiuni'] || '';
+
+        // extragem un număr de la început (ex: 922 din "922-furnica")
+        const match = name.match(/^(\d+)/);
+        const id = match ? match[1] : '';
+
         const fileSol = r['fisier_rezolvare'] || r['rezolvare'] || '';
         const fileEn = r['fisier_enunt'] || r['enunt'] || r['enunț'] || '';
         const slug = toSlug(name);
+
         return { name, descriere, slug, id, fileSol, fileEn };
       });
       dataByTab[tab] = norm;
@@ -66,6 +71,7 @@ async function loadData() {
   }
   renderTable();
 }
+
 
 function matchesFilters(item) {
   const q = searchInput.value.trim().toLowerCase();
